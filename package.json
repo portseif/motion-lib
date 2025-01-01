@@ -1,26 +1,36 @@
 {
-  "name": "@portseif/motion-lib",
-  "version": "0.1.0",
+  "name": "motion-lib",
+  "version": "1.0.0",
+  "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "Chris Seifert",
-  "license": "ISC",
-  "description": "Framework-agnostic animation library using Motion.",
-  "main": "dist/motion-lib.cjs.js",
-  "module": "dist/motion-lib.esm.js",
-  "exports": {
-    ".": {
-      "import": "./dist/motion-lib.esm.js",
-      "require": "./dist/motion-lib.cjs.js"
-    }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/portseif/motion-lib.git"
   },
+  "keywords": [
+    "motion"
+  ],
+  "author": "Chris Seifert (portseif)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/portseif/motion-lib/issues"
+  },
+  "homepage": "https://github.com/portseif/motion-lib#readme",
+  "description": "",
   "dependencies": {
     "motion": "^11.15.0"
   },
   "devDependencies": {
+    "eslint": "^9.17.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.4.2",
     "vite": "^6.0.6"
-  }
+  },
+  "type": "module"
 }

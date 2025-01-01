@@ -1,20 +1,19 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
+import path from 'path'
 
 export default defineConfig({
-    build: {
-        lib: {
-            entry: 'src/index.js',
-            name: 'MotionLib',
-            fileName: (format) => `motion-lib.${format}.js`,
-            formats: ['es', 'umd'], // Include ESM for tree-shaking
-        },
-        rollupOptions: {
-            external: ['motion'], // Mark dependencies as external
-            output: {
-                globals: {
-                    motion: 'motion',
-                },
-            },
-        },
-    },
-});
+  // Basic configuration
+  server: {
+    port: 3000,
+    open: true
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html')
+      }
+    }
+  }
+})
