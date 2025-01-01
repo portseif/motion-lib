@@ -1,0 +1,26 @@
+# Node/NPM
+node_modules/
+package-lock.json
+npm-debug.log
+
+# IDE files
+.idea/
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Test and coverage
+coverage/
+*.lcov
+
+# Build artifacts
+dist/
+lib/
+es/
+umd/
+
+# Environment files
+.env
+.env.*

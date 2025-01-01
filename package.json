@@ -1,0 +1,26 @@
+{
+  "name": "@portseif/motion-lib",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "Chris Seifert",
+  "license": "ISC",
+  "description": "Framework-agnostic animation library using Motion.",
+  "main": "dist/motion-lib.cjs.js",
+  "module": "dist/motion-lib.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/motion-lib.esm.js",
+      "require": "./dist/motion-lib.cjs.js"
+    }
+  },
+  "dependencies": {
+    "motion": "^11.15.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.6"
+  }
+}
