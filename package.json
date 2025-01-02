@@ -1,26 +1,50 @@
 {
   "name": "@portseif/motion-lib",
   "version": "0.1.0",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build"
-  },
-  "keywords": [],
-  "author": "Chris Seifert",
-  "license": "ISC",
   "description": "Framework-agnostic animation library using Motion.",
-  "main": "dist/motion-lib.cjs.js",
-  "module": "dist/motion-lib.esm.js",
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/motion-lib.umd.js",
+  "module": "./dist/motion-lib.es.js",
   "exports": {
     ".": {
-      "import": "./dist/motion-lib.esm.js",
-      "require": "./dist/motion-lib.cjs.js"
+      "import": "./dist/motion-lib.es.js",
+      "require": "./dist/motion-lib.umd.js"
     }
   },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "animation",
+    "motion",
+    "transitions",
+    "scroll",
+    "framework-agnostic"
+  ],
+  "author": "Chris Seifert",
+  "license": "ISC",
   "dependencies": {
     "motion": "^11.15.0"
   },
   "devDependencies": {
     "vite": "^6.0.6"
+  },
+  "peerDependencies": {
+    "motion": "^11.15.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portseif/motion-lib.git"
   }
 }

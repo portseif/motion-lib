@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Library Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .demo-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .demo-box {
+            width: 100px;
+            height: 100px;
+            background: #3b82f6;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: #2563eb;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        /* Scroll trigger specific styles */
+        .scroll-section {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .scroll-intro {
+            padding: 2rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .scroll-demo-box {
+            width: 200px;
+            height: 200px;
+            background: #3b82f6;
+            border-radius: 12px;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+        }
+        /* Scroll scrub specific styles */
+        .scrub-section {
+            height: 200vh; /* Extra tall for smooth scrolling */
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+            margin: 4rem -2rem;
+            padding: 2rem;
+        }
+        .scrub-content {
+            position: sticky;
+            top: 50vh;
+            transform: translateY(-50%);
+            text-align: center;
+        }
+        .scrub-demo-box {
+            width: 300px;
+            height: 300px;
+            background: #3b82f6;
+            border-radius: 20px;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            will-change: transform, opacity;
+        }
+    </style>
+</head>
+<body>
+    <h1>Motion Library Demo</h1>
+
+    <!-- Fade Demo -->
+    <div class="demo-section">
+        <h2>Fade Animation</h2>
+        <div id="fadeBox" class="demo-box">Fade Me</div>
+        <button id="fadeInBtn">Fade In</button>
+        <button id="fadeOutBtn">Fade Out</button>
+    </div>
+
+    <!-- Slide Demo -->
+    <div class="demo-section">
+        <h2>Slide Animation</h2>
+        <div id="slideBox" class="demo-box">Slide Me</div>
+        <button id="slideLeftBtn">Slide Left</button>
+        <button id="slideRightBtn">Slide Right</button>
+        <button id="slideUpBtn">Slide Up</button>
+        <button id="slideDownBtn">Slide Down</button>
+    </div>
+
+    <!-- Scroll Trigger Demo -->
+    <div class="scroll-intro">
+        <h2>Scroll Trigger Animations</h2>
+        <p>Scroll down to see different animations trigger as elements come into view!</p>
+    </div>
+
+    <div class="scroll-section">
+        <div id="fadeScroll" class="scroll-demo-box">
+            Fade on Scroll
+        </div>
+    </div>
+
+    <div class="scroll-section">
+        <div id="slideScroll" class="scroll-demo-box">
+            Slide on Scroll
+        </div>
+    </div>
+
+    <div class="scroll-section">
+        <div id="scaleScroll" class="scroll-demo-box">
+            Scale on Scroll
+        </div>
+    </div>
+
+    <!-- Scroll Scrub Demo -->
+    <div class="scroll-intro">
+        <h2>Scroll Scrub Animation</h2>
+        <p>Scroll down slowly to see the animation follow your scroll position!</p>
+    </div>
+
+    <div class="scrub-section">
+        <div class="scrub-content">
+            <div id="scrubBox" class="scrub-demo-box">
+                Scroll to Control Me
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { fade } from '/src/animations/fade.js';
+        import { slide } from '/src/animations/slide.js';
+        import { scrollTrigger } from '/src/animations/scrollTrigger.js';
+        import { scrollScrub } from '/src/animations/scrollScrub.js';
+
+        // Fade Demo
+        const fadeBox = document.getElementById('fadeBox');
+        const fadeInBtn = document.getElementById('fadeInBtn');
+        const fadeOutBtn = document.getElementById('fadeOutBtn');
+
+        fadeInBtn.addEventListener('click', () => {
+            fadeBox.style.opacity = '0';
+            fade(fadeBox, {
+                opacity: [0, 1],
+                duration: 0.5,
+                easing: 'easeOut'
+            });
+        });
+
+        fadeOutBtn.addEventListener('click', () => {
+            fade(fadeBox, {
+                opacity: [1, 0],
+                duration: 0.5,
+                easing: 'easeIn'
+            });
+        });
+
+        // Slide Demo
+        const slideBox = document.getElementById('slideBox');
+        const slideLeftBtn = document.getElementById('slideLeftBtn');
+        const slideRightBtn = document.getElementById('slideRightBtn');
+        const slideUpBtn = document.getElementById('slideUpBtn');
+        const slideDownBtn = document.getElementById('slideDownBtn');
+
+        slideLeftBtn.addEventListener('click', () => {
+            slide(slideBox, {
+                direction: 'left',
+                duration: 0.5,
+                distance: 200
+            });
+        });
+
+        slideRightBtn.addEventListener('click', () => {
+            slide(slideBox, {
+                direction: 'right',
+                duration: 0.5,
+                distance: 200
+            });
+        });
+
+        slideUpBtn.addEventListener('click', () => {
+            slide(slideBox, {
+                direction: 'up',
+                duration: 0.5,
+                distance: 100
+            });
+        });
+
+        slideDownBtn.addEventListener('click', () => {
+            slide(slideBox, {
+                direction: 'down',
+                duration: 0.5,
+                distance: 100
+            });
+        });
+
+        // Scroll Trigger Demos
+        scrollTrigger(document.getElementById('fadeScroll'), {
+            animation: 'fade',
+            duration: 0.8,
+            threshold: 0.5
+        });
+
+        scrollTrigger(document.getElementById('slideScroll'), {
+            animation: 'slide',
+            direction: 'up',
+            distance: 100,
+            duration: 0.8,
+            threshold: 0.5
+        });
+
+        scrollTrigger(document.getElementById('scaleScroll'), {
+            animation: 'scale',
+            duration: 0.8,
+            threshold: 0.5
+        });
+
+        // Scroll Scrub Demo
+        const scrubBox = document.getElementById('scrubBox');
+        scrollScrub(scrubBox, {
+            start: 0.3,  // Start when element is 30% through viewport
+            end: 0.7,    // End when element is 70% through viewport
+            properties: {
+                transform: ['scale(0.5) translateY(100px)', 'scale(1.2) translateY(-100px)'],
+                opacity: [0.3, 1]
+            },
+            smooth: true,
+            smoothAmount: 0.1
+        });
+    </script>
+</body>
+</html>
