@@ -32,6 +32,7 @@
   "author": "Chris Seifert",
   "license": "ISC",
   "dependencies": {
+    "@motionone/dom": "^10.18.0",
     "motion": "^11.15.0"
   },
   "devDependencies": {
