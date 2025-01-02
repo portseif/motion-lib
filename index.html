@@ -94,6 +94,64 @@
             font-size: 1.5rem;
             will-change: transform, opacity;
         }
+        .parallax-section {
+            height: 150vh;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #1e293b, #0f172a);
+            margin: 4rem -2rem;
+            padding: 4rem 2rem;
+            perspective: 1000px;
+        }
+        .parallax-content {
+            position: relative;
+            height: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .parallax-layer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            border-radius: 16px;
+            will-change: transform;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+        .drag-container {
+            height: 300px;
+            border: 2px dashed #e5e7eb;
+            border-radius: 12px;
+            margin: 2rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .demo-hint {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+        .preloader-box {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+            min-height: 200px;
+        }
+        .preloader-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -155,11 +213,62 @@
         </div>
     </div>
 
+    <!-- Parallax Demo -->
+    <div class="scroll-intro">
+        <h2>Parallax Animation</h2>
+        <p>Scroll to see elements move at different speeds!</p>
+    </div>
+
+    <div class="parallax-section">
+        <div class="parallax-content">
+            <div id="parallaxBackground" class="parallax-layer" style="background: #93c5fd">
+                Background Layer
+            </div>
+            <div id="parallaxMiddle" class="parallax-layer" style="background: #60a5fa">
+                Middle Layer
+            </div>
+            <div id="parallaxForeground" class="parallax-layer" style="background: #3b82f6">
+                Foreground Layer
+            </div>
+        </div>
+    </div>
+
+    <!-- Spring Demo -->
+    <div class="demo-section">
+        <h2>Spring Animation</h2>
+        <div id="springBox" class="demo-box">Spring Me</div>
+        <button id="springScaleBtn">Scale</button>
+        <button id="springRotateBtn">Rotate</button>
+        <button id="springMoveBtn">Move</button>
+    </div>
+
+    <!-- Drag Demo -->
+    <div class="demo-section">
+        <h2>Drag Animation</h2>
+        <div class="drag-container">
+            <div id="dragBox" class="demo-box">Drag Me</div>
+        </div>
+        <p class="demo-hint">Try dragging the box!</p>
+    </div>
+
+    <!-- Preloader Demo -->
+    <div class="demo-section">
+        <h2>Preloader Animation</h2>
+        <div class="preloader-controls">
+            <button id="counterBtn">Counter</button>
+            <button id="spinnerBtn">Spinner</button>
+            <button id="bothBtn">Both</button>
+            <button id="stopBtn">Stop</button>
+        </div>
+        <div id="preloaderBox" class="preloader-box"></div>
+    </div>
+
     <script type="module">
         import { fade } from '/src/animations/fade.js';
         import { slide } from '/src/animations/slide.js';
         import { scrollTrigger } from '/src/animations/scrollTrigger.js';
         import { scrollScrub } from '/src/animations/scrollScrub.js';
+        import { parallax, spring, drag, preloader } from './src/main.js';
 
         // Fade Demo
         const fadeBox = document.getElementById('fadeBox');
@@ -254,6 +363,130 @@
             },
             smooth: true,
             smoothAmount: 0.1
+        });
+
+        // Parallax Demo
+        parallax(document.getElementById('parallaxBackground'), {
+            speed: 0.2,
+            direction: 'y',
+            smooth: true
+        });
+
+        parallax(document.getElementById('parallaxMiddle'), {
+            speed: 0.4,
+            direction: 'y',
+            smooth: true
+        });
+
+        parallax(document.getElementById('parallaxForeground'), {
+            speed: 0.6,
+            direction: 'y',
+            smooth: true
+        });
+
+        // Spring Demo
+        const springBox = document.getElementById('springBox');
+
+        document.getElementById('springScaleBtn').addEventListener('click', () => {
+            spring(springBox, {
+                stiffness: 100,
+                damping: 10,
+                from: { scale: 1 },
+                to: { scale: 1.5 }
+            }).then(() => {
+                spring(springBox, {
+                    stiffness: 100,
+                    damping: 10,
+                    from: { scale: 1.5 },
+                    to: { scale: 1 }
+                });
+            });
+        });
+
+        document.getElementById('springRotateBtn').addEventListener('click', () => {
+            spring(springBox, {
+                stiffness: 100,
+                damping: 8,
+                from: { rotate: 0 },
+                to: { rotate: 360 }
+            });
+        });
+
+        document.getElementById('springMoveBtn').addEventListener('click', () => {
+            spring(springBox, {
+                stiffness: 100,
+                damping: 12,
+                from: { x: 0, y: 0 },
+                to: { x: 100, y: 50 }
+            }).then(() => {
+                spring(springBox, {
+                    stiffness: 100,
+                    damping: 12,
+                    from: { x: 100, y: 50 },
+                    to: { x: 0, y: 0 }
+                });
+            });
+        });
+
+        // Drag Demo
+        drag(document.getElementById('dragBox'), {
+            bounds: 100,
+            elastic: true,
+            elasticity: 0.5
+        });
+
+        // Preloader Demo
+        const preloaderBox = document.getElementById('preloaderBox');
+        let currentPreloader = null;
+
+        document.getElementById('counterBtn').addEventListener('click', () => {
+            if (currentPreloader) currentPreloader.stop();
+            preloaderBox.innerHTML = '';
+            preloaderBox.style.display = 'block';
+            preloaderBox.style.opacity = '1';
+            currentPreloader = preloader(preloaderBox, {
+                type: 'counter',
+                duration: 3,
+                start: 0,
+                end: 100
+            });
+            currentPreloader.start();
+        });
+
+        document.getElementById('spinnerBtn').addEventListener('click', () => {
+            if (currentPreloader) currentPreloader.stop();
+            preloaderBox.innerHTML = '';
+            preloaderBox.style.display = 'block';
+            preloaderBox.style.opacity = '1';
+            currentPreloader = preloader(preloaderBox, {
+                type: 'spinner',
+                spinnerColor: '#3b82f6',
+                spinnerSize: 50
+            });
+            currentPreloader.start();
+        });
+
+        document.getElementById('bothBtn').addEventListener('click', () => {
+            if (currentPreloader) currentPreloader.stop();
+            preloaderBox.innerHTML = '';
+            preloaderBox.style.display = 'block';
+            preloaderBox.style.opacity = '1';
+            currentPreloader = preloader(preloaderBox, {
+                type: 'both',
+                duration: 3,
+                start: 0,
+                end: 100,
+                spinnerColor: '#3b82f6',
+                spinnerSize: 40
+            });
+            currentPreloader.start();
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (currentPreloader) {
+                currentPreloader.stop();
+                currentPreloader = null;
+            }
         });
     </script>
 </body>

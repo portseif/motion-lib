@@ -7,9 +7,13 @@ export { fade } from './animations/fade';
 export { slide } from './animations/slide';
 export { scrollTrigger } from './animations/scrollTrigger';
 export { scrollScrub } from './animations/scrollScrub';
+export { parallax } from './animations/parallax';
+export { spring } from './animations/spring';
+export { drag } from './animations/drag';
+export { preloader } from './animations/preloader';
 
 // Animation utility functions
-export const version = '0.1.0';
+export const version = '1.0.0';
 
 /**
  * Initialize the animation library with global options
