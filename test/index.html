@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motion Lib Test</title>
+    <script src="/dist/motion-lib.esm.js" type="module"></script>
+</head>
+<body>
+    <div id="fadeElement" style="width: 100px; height: 100px; background: #3498db;"></div>
+
+    <script type="module">
+      import { fade } from './src/motion-lib.js'; // Update to correct path
+      fade(document.getElementById('fadeElement'), {
+        duration: 2000,
+        direction: 'in'
+      });
+    </script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Motion Lib
 
 A framework-agnostic animation library built on top of Motion.js, providing easy-to-use animations for any web project.
@@ -117,3 +118,5 @@ scrollScrub(element, options)
 ## License
 
 ISC © Chris Seifert
+=======
+>>>>>>> 8f36d269d46cb68d6c399952765e36fa871d46ae
