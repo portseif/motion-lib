@@ -11,6 +11,8 @@ export { parallax } from './animations/parallax';
 export { spring } from './animations/spring';
 export { drag } from './animations/drag';
 export { preloader } from './animations/preloader';
+export { cursor } from './animations/cursor';
+export { textMorph } from './animations/textMorph';
 
 // Animation utility functions
 export const version = '1.0.0';
