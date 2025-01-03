@@ -4,17 +4,17 @@ import { animate } from 'motion'
 const ANIMATION_CONFIG = {
     spring: {
         type: "spring",
-        stiffness: 300,
-        damping: 20,
-        mass: 0.8,
-        restSpeed: 0.2
+        stiffness: 200,
+        damping: 25,
+        mass: 0.5,
+        restSpeed: 0.1
     },
-    easing: [0.23, 1, 0.32, 1],
+    easing: [0.32, 0.72, 0, 1],
     durations: {
-        expand: 0.5,
-        contract: 0.4,
-        hover: 0.3,
-        click: 0.15
+        expand: 0.6,
+        contract: 0.5,
+        hover: 0.4,
+        click: 0.2
     }
 }
 
@@ -50,6 +50,7 @@ const getDefaultStyles = (size, color, shape, blend = false) => ({
     `,
     text: `
         position: absolute;
+        display: block;
         color: white;
         opacity: 0;
         pointer-events: none;
@@ -59,6 +60,8 @@ const getDefaultStyles = (size, color, shape, blend = false) => ({
         white-space: nowrap;
         z-index: 10001;
         mix-blend-mode: ${blend ? 'difference' : 'normal'};
+        will-change: transform, opacity;
+        transform-origin: center center;
     `
 })
 
@@ -107,9 +110,14 @@ export function cursor(options = {}) {
     // Animation handlers
     const animations = {
         expand: (text) => {
-            // Set text content and make it visible immediately
+            // Cancel any ongoing animations
+            elements.inner.getAnimations().forEach(animation => animation.cancel())
+            elements.text.getAnimations().forEach(animation => animation.cancel())
+
+            // Set text content and initial state
             elements.text.textContent = text
-            elements.text.style.opacity = '1'
+            elements.text.style.display = 'flex'
+            elements.text.style.opacity = '0'
             elements.text.style.transform = 'translate(-50%, -50%)'
 
             if (morph) {
@@ -119,7 +127,12 @@ export function cursor(options = {}) {
                 const targetWidth = textRect.width + padding
                 const targetHeight = textRect.height + padding
 
-                // Animate cursor to text size
+                // Reset inner cursor state
+                elements.inner.style.width = `${size}px`
+                elements.inner.style.height = `${size}px`
+                elements.inner.style.transform = `scale(${scale})`
+
+                // Animate cursor to text size with spring physics
                 animate(elements.inner, {
                     width: [size, targetWidth],
                     height: [size, targetHeight],
@@ -128,8 +141,16 @@ export function cursor(options = {}) {
                     borderColor: color,
                     borderRadius: ['50%', '8px']
                 }, {
-                    duration: ANIMATION_CONFIG.durations.expand,
-                    easing: ANIMATION_CONFIG.easing
+                    ...ANIMATION_CONFIG.spring,
+                    duration: ANIMATION_CONFIG.durations.expand
+                }).finished.then(() => {
+                    // Animate text in
+                    animate(elements.text, {
+                        opacity: [0, 1]
+                    }, {
+                        duration: 0.3,
+                        easing: ANIMATION_CONFIG.easing
+                    })
                 })
             } else {
                 // Get text dimensions for scaling
@@ -140,44 +161,60 @@ export function cursor(options = {}) {
                     (textRect.height + padding) / size
                 ) * scale
 
-                // Scale inner cursor while keeping text at original size
-                elements.text.style.transform = 'translate(-50%, -50%) scale(' + (1/targetScale) + ')'
+                // Reset inner cursor state
+                elements.inner.style.transform = `scale(${scale})`
 
-                // Animate cursor scale
+                // Animate cursor scale with spring physics
                 animate(elements.inner, {
                     scale: [scale, targetScale]
                 }, {
-                    duration: ANIMATION_CONFIG.durations.expand,
-                    easing: ANIMATION_CONFIG.easing
+                    ...ANIMATION_CONFIG.spring,
+                    duration: ANIMATION_CONFIG.durations.expand
+                }).finished.then(() => {
+                    // Animate text in
+                    animate(elements.text, {
+                        opacity: [0, 1]
+                    }, {
+                        duration: 0.3,
+                        easing: ANIMATION_CONFIG.easing
+                    })
                 })
             }
         },
         contract: (withText = false) => {
-            // Hide text immediately
-            elements.text.style.opacity = '0'
-            elements.text.textContent = ''
-            elements.text.style.transform = 'translate(-50%, -50%)'
+            // Cancel any ongoing animations
+            elements.inner.getAnimations().forEach(animation => animation.cancel())
+            elements.text.getAnimations().forEach(animation => animation.cancel())
 
-            if (withText && morph) {
-                animate(elements.inner, {
-                    width: [elements.inner.offsetWidth, size],
-                    height: [elements.inner.offsetHeight, size],
-                    scale: 1,
-                    backgroundColor: shape === 'ring' ? 'transparent' : color,
-                    borderColor: color,
-                    borderRadius: ['8px', '50%']
-                }, {
-                    duration: ANIMATION_CONFIG.durations.contract,
-                    easing: ANIMATION_CONFIG.easing
-                })
-            } else {
-                animate(elements.inner, {
-                    scale: scale
-                }, {
-                    duration: ANIMATION_CONFIG.durations.contract,
-                    easing: ANIMATION_CONFIG.easing
-                })
-            }
+            // Reset inner cursor state
+            elements.inner.style.width = `${size}px`
+            elements.inner.style.height = `${size}px`
+            elements.inner.style.transform = `scale(${scale})`
+            elements.inner.style.borderRadius = shape === 'circle' || shape === 'ring' ? '50%' : '0'
+
+            // First animate text out
+            return animate(elements.text, {
+                opacity: [1, 0],
+                transform: ['translate(-50%, -50%)', 'translate(-50%, -50%) scale(0.8)']
+            }, {
+                duration: 0.3,
+                easing: ANIMATION_CONFIG.easing
+            }).finished
+              .then(() => {
+                  // Only clear text content after fade out completes
+                  elements.text.textContent = ''
+                  elements.text.style.transform = 'translate(-50%, -50%)'
+                  elements.text.style.display = 'none'
+              })
+              .catch(error => {
+                  // Fallback to immediate state reset if animation fails
+                  console.warn('Cursor contract animation failed:', error)
+                  elements.text.style.opacity = '0'
+                  elements.text.style.transform = 'translate(-50%, -50%)'
+                  elements.text.style.display = 'none'
+                  elements.text.textContent = ''
+                  elements.inner.style.transform = `scale(${scale})`
+              })
         },
         hover: () => {
             animate(elements.inner, {
@@ -251,8 +288,8 @@ export function cursor(options = {}) {
         inner.style.cssText = styles.inner
         text.style.cssText = styles.text + `
             font-size: ${textSize * baseFontSize}px;
-            line-height: 1.2;
-            padding: 4px 8px;
+            line-height: 1;
+            padding: 0;
             color: white;
             font-family: system-ui, -apple-system, sans-serif;
             font-weight: 500;
@@ -264,6 +301,13 @@ export function cursor(options = {}) {
             min-width: max-content;
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            user-select: none;
+            will-change: opacity;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `
 
         outer.appendChild(inner)
@@ -300,15 +344,34 @@ export function cursor(options = {}) {
 
         // Check for either data-hover-text or data-text-hover attribute
         const hoverText = element.getAttribute('data-hover-text') || element.getAttribute('data-text-hover')
+
         if (hoverText) {
             elements.outer.classList.add('cursor--has-text')
-            showHoverText(hoverText)
+            state.currentHoverText = hoverText
+
+            // Set initial text state
+            elements.text.textContent = hoverText
+            elements.text.style.display = 'block'
+            elements.text.style.opacity = '0'
+            elements.text.style.transform = 'translate(-50%, -50%)'
+
+            // Force a reflow
+            elements.text.offsetHeight
+
+            // Animate text in
+            animate(elements.text, {
+                opacity: [0, 1]
+            }, {
+                duration: 0.2,
+                easing: ANIMATION_CONFIG.easing
+            })
+
+            // Expand cursor
+            animations.expand(hoverText)
         } else if (state.currentHoverText) {
-            // Only hide text if we were showing text before
             elements.outer.classList.remove('cursor--has-text')
             hideHoverText()
         } else {
-            // Just do regular hover if we weren't showing text
             animations.hover()
         }
     }
@@ -322,25 +385,34 @@ export function cursor(options = {}) {
         elements.outer.classList.remove('cursor--hover')
         elements.outer.classList.remove('cursor--has-text')
 
-        // Immediately hide text without animation
+        // Reset cursor state and animate
         if (state.currentHoverText) {
-            elements.text.textContent = ''
-            elements.text.style.opacity = '0'
+            const prevText = state.currentHoverText
             state.currentHoverText = ''
+            animations.contract(true).then(() => {
+                // Only clear if this was the last text shown
+                if (prevText === elements.text.textContent) {
+                    elements.text.textContent = ''
+                }
+            })
+        } else {
+            animations.contract(false)
         }
-
-        // Contract cursor back to original size
-        animate(elements.inner, {
-            scale: scale
-        }, {
-            duration: ANIMATION_CONFIG.durations.contract,
-            easing: ANIMATION_CONFIG.easing
-        })
     }
 
     function showHoverText(text) {
         if (state.currentHoverText === text) return
+        console.log('Showing hover text:', text) // Debug log
         state.currentHoverText = text
+
+        // Set text content and initial state
+        elements.text.textContent = text
+        elements.text.style.transform = 'translate(-50%, -50%) scale(0.6)'
+        elements.text.style.opacity = '0'
+
+        // Force a reflow
+        elements.text.offsetHeight
+
         animations.expand(text)
     }
 
@@ -350,6 +422,7 @@ export function cursor(options = {}) {
         // Immediately hide text without animation
         elements.text.textContent = ''
         elements.text.style.opacity = '0'
+        elements.text.style.display = 'none'
         state.currentHoverText = ''
 
         // Contract cursor back to original size
