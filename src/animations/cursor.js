@@ -1,76 +1,42 @@
-/**
- * @typedef {Object} CursorOptions
- * @property {number} [size=20] - Size of the cursor in pixels
- * @property {string} [color='#3b82f6'] - Color of the cursor
- * @property {number} [smoothness=0.15] - Cursor movement smoothness (0-1)
- * @property {string} [shape='circle'] - Cursor shape: 'circle', 'square', 'ring'
- * @property {number} [scale=1] - Base scale of the cursor
- * @property {number} [hoverScale=1.5] - Scale when hovering over interactive elements
- * @property {number} [clickScale=0.9] - Scale when clicking
- * @property {number} [hoverTextSize=14] - Font size of hover text in pixels
- * @property {string[]} [hoverSelectors=['button', 'a', '[data-cursor-hover]', '[data-hover-text]']] - Elements that trigger hover effect
- */
-
 import { animate } from 'motion'
 
-/**
- * Creates a custom cursor with smooth following and hover effects
- * @param {CursorOptions} options - Cursor options
- * @returns {Object} Control object with show, hide, and cleanup methods
- */
-export function cursor(options = {}) {
-    const {
-        size = 20,
-        color = '#3b82f6',
-        smoothness = 0.15,
-        shape = 'circle',
-        scale = 1,
-        hoverScale = 2.5,
-        clickScale = 0.9,
-        hoverTextSize = 4,
-        hoverSelectors = ['button', 'a', '[data-cursor-hover]', '[data-hover-text]']
-    } = options
-
-    // Hide default cursor if custom cursor is enabled
-    const isCustomCursorEnabled = Boolean(shape)
-    if (isCustomCursorEnabled) {
-        // Hide cursor on all elements
-        const style = document.createElement('style')
-        style.textContent = `
-            * {
-                cursor: none !important;
-            }
-        `
-        document.head.appendChild(style)
+// Animation configurations
+const ANIMATION_CONFIG = {
+    spring: {
+        type: "spring",
+        stiffness: 300,
+        damping: 20,
+        mass: 0.8,
+        restSpeed: 0.2
+    },
+    easing: [0.23, 1, 0.32, 1],
+    durations: {
+        expand: 0.5,
+        contract: 0.4,
+        hover: 0.3,
+        click: 0.15
     }
+}
 
-    // Create cursor elements
-    const cursorOuter = document.createElement('div')
-    const cursorInner = document.createElement('div')
-    const hoverText = document.createElement('div')
-
-    // Style outer cursor
-    cursorOuter.style.cssText = `
+// Default styles
+const getDefaultStyles = (size, color, shape, blend = false) => ({
+    outer: `
         position: fixed;
         pointer-events: none;
         z-index: 9999;
-        mix-blend-mode: difference;
+        ${blend ? 'mix-blend-mode: difference;' : ''}
         transition: opacity 0.15s ease-out;
         will-change: transform;
         width: ${size}px;
         height: ${size}px;
         top: 0;
         left: 0;
-        opacity: ${isCustomCursorEnabled ? '1' : '0'};
-        display: ${isCustomCursorEnabled ? 'block' : 'none'};
-    `
-
-    // Style inner cursor
-    cursorInner.style.cssText = `
+    `,
+    inner: `
         position: absolute;
         width: 100%;
         height: 100%;
-        transform: scale(${scale});
+        transform: scale(1);
         will-change: transform;
         display: flex;
         align-items: center;
@@ -81,265 +47,377 @@ export function cursor(options = {}) {
         ${shape === 'ring' ? `border: 2px solid ${color};` : ''}
         opacity: 1;
         pointer-events: none;
-    `
-
-    // Style hover text
-    hoverText.style.cssText = `
+    `,
+    text: `
         position: absolute;
         color: white;
-        font-size: ${hoverTextSize}px;
-        // white-space: nowrap;
         opacity: 0;
         pointer-events: none;
-        // transform: scale(0.8);
         text-align: center;
-        max-width: ${size * 2}px;
-        // line-height: 1.2;
-        // font-family: system-ui, -apple-system, sans-serif;
-        // mix-blend-mode: difference;
+        width: auto;
+        height: auto;
+        white-space: nowrap;
+        z-index: 10001;
+        mix-blend-mode: ${blend ? 'difference' : 'normal'};
     `
+})
 
-    // Add to DOM
-    cursorOuter.appendChild(cursorInner)
-    cursorInner.appendChild(hoverText)
-    document.body.appendChild(cursorOuter)
+export function cursor(options = {}) {
+    const {
+        size = 20,
+        color = '#3b82f6',
+        smoothness = 0.15,
+        shape = 'circle',
+        scale = 1,
+        hoverScale = 1.5,
+        clickScale = 0.9,
+        hoverTextSize = 1,
+        blend = false,
+        morph = false,
+        hoverSelectors = ['button', 'a', '[data-cursor-hover]', '[data-hover-text]', '[data-text-hover]']
+    } = options
 
-    // Animation configurations
-    const spring = {
-        type: "spring",
-        stiffness: 400,
-        damping: 25,
-        mass: 0.5
+    // Get base font size from document
+    const getBaseFontSize = () => {
+        return parseFloat(getComputedStyle(document.documentElement).fontSize)
     }
 
-    const easing = [0.23, 1, 0.32, 1]
-
-    // State
-    let currentX = -100
-    let currentY = -100
-    let targetX = -100
-    let targetY = -100
-    let isVisible = false
-    let isHovering = false
-    let animationFrame
-    let lastHoverElement = null
-    let currentHoverText = ''
-
-    const update = () => {
-        currentX += (targetX - currentX) * smoothness
-        currentY += (targetY - currentY) * smoothness
-        cursorOuter.style.transform = `translate3d(${currentX - size/2}px, ${currentY - size/2}px, 0)`
-        animationFrame = requestAnimationFrame(update)
+    // State management
+    const state = {
+        currentX: -100,
+        currentY: -100,
+        targetX: -100,
+        targetY: -100,
+        isVisible: false,
+        isHovering: false,
+        animationFrame: null,
+        lastHoverElement: null,
+        currentHoverText: '',
+        isCustomCursorEnabled: Boolean(shape)
     }
 
-    const handleMouseMove = (e) => {
-        targetX = e.clientX
-        targetY = e.clientY
-        if (!isVisible) show()
+    // Create and style elements
+    const elements = createElements(size, color, shape, hoverTextSize, state.isCustomCursorEnabled, blend)
+
+    // Setup cursor hiding
+    if (state.isCustomCursorEnabled) {
+        setupCursorHiding()
     }
 
-    const handleMouseLeave = () => {
-        hide()
-    }
+    // Animation handlers
+    const animations = {
+        expand: (text) => {
+            // Set text content and make it visible immediately
+            elements.text.textContent = text
+            elements.text.style.opacity = '1'
+            elements.text.style.transform = 'translate(-50%, -50%)'
 
-    const handleHoverStart = (element) => {
-        if (lastHoverElement === element) return
-        lastHoverElement = element
-        isHovering = true
+            if (morph) {
+                // Get text dimensions
+                const textRect = elements.text.getBoundingClientRect()
+                const padding = 20
+                const targetWidth = textRect.width + padding
+                const targetHeight = textRect.height + padding
 
-        const hoverText = element.getAttribute('data-hover-text')
-        if (hoverText) {
-            showHoverText(hoverText)
-        } else {
-            hideHoverText()
-            animate(cursorInner, {
+                // Animate cursor to text size
+                animate(elements.inner, {
+                    width: [size, targetWidth],
+                    height: [size, targetHeight],
+                    scale: [scale, 1],
+                    backgroundColor: shape === 'ring' ? 'transparent' : color,
+                    borderColor: color,
+                    borderRadius: ['50%', '8px']
+                }, {
+                    duration: ANIMATION_CONFIG.durations.expand,
+                    easing: ANIMATION_CONFIG.easing
+                })
+            } else {
+                // Get text dimensions for scaling
+                const textRect = elements.text.getBoundingClientRect()
+                const padding = 20
+                const targetScale = Math.max(
+                    (textRect.width + padding) / size,
+                    (textRect.height + padding) / size
+                ) * scale
+
+                // Scale inner cursor while keeping text at original size
+                elements.text.style.transform = 'translate(-50%, -50%) scale(' + (1/targetScale) + ')'
+
+                // Animate cursor scale
+                animate(elements.inner, {
+                    scale: [scale, targetScale]
+                }, {
+                    duration: ANIMATION_CONFIG.durations.expand,
+                    easing: ANIMATION_CONFIG.easing
+                })
+            }
+        },
+        contract: (withText = false) => {
+            // Hide text immediately
+            elements.text.style.opacity = '0'
+            elements.text.textContent = ''
+            elements.text.style.transform = 'translate(-50%, -50%)'
+
+            if (withText && morph) {
+                animate(elements.inner, {
+                    width: [elements.inner.offsetWidth, size],
+                    height: [elements.inner.offsetHeight, size],
+                    scale: 1,
+                    backgroundColor: shape === 'ring' ? 'transparent' : color,
+                    borderColor: color,
+                    borderRadius: ['8px', '50%']
+                }, {
+                    duration: ANIMATION_CONFIG.durations.contract,
+                    easing: ANIMATION_CONFIG.easing
+                })
+            } else {
+                animate(elements.inner, {
+                    scale: scale
+                }, {
+                    duration: ANIMATION_CONFIG.durations.contract,
+                    easing: ANIMATION_CONFIG.easing
+                })
+            }
+        },
+        hover: () => {
+            animate(elements.inner, {
                 scale: hoverScale,
                 backgroundColor: shape === 'ring' ? 'transparent' : color,
                 borderColor: color
             }, {
-                duration: 0.2,
-                easing
+                duration: ANIMATION_CONFIG.durations.hover,
+                easing: ANIMATION_CONFIG.easing
+            })
+        },
+        click: (isDown) => {
+            if (state.currentHoverText) return
+
+            animate(elements.inner, {
+                scale: isDown
+                    ? (state.isHovering ? hoverScale * clickScale : scale * clickScale)
+                    : (state.isHovering ? hoverScale : scale),
+                backgroundColor: shape === 'ring' ? 'transparent' : color,
+                borderColor: color
+            }, {
+                duration: ANIMATION_CONFIG.durations.click,
+                easing: 'ease-out'
             })
         }
     }
 
-    const handleHoverEnd = () => {
-        if (!isHovering) return
-        isHovering = false
-        lastHoverElement = null
-
-        // Always hide text and contract cursor when leaving any element
-        if (currentHoverText) {
-            hideHoverText()
+    // Event handlers
+    const handlers = {
+        mouseMove: (e) => {
+            state.targetX = e.clientX
+            state.targetY = e.clientY
+            if (!state.isVisible) show()
+        },
+        mouseLeave: hide,
+        mouseDown: () => {
+            animations.click(true)
+            elements.outer.classList.add('cursor--clicking')
+        },
+        mouseUp: () => {
+            animations.click(false)
+            elements.outer.classList.remove('cursor--clicking')
+        },
+        mouseOver: (e) => {
+            const target = e.target
+            if (hoverSelectors.some(selector => target.matches(selector))) {
+                handleHoverStart(target)
+            } else {
+                handleHoverEnd()
+            }
         }
-        animate(cursorInner, {
-            scale: scale,
-            backgroundColor: shape === 'ring' ? 'transparent' : color,
-            borderColor: color
+    }
+
+    function createElements(size, color, shape, textSize, enabled, blend) {
+        const outer = document.createElement('div')
+        const inner = document.createElement('div')
+        const text = document.createElement('div')
+
+        // Add BEM classes
+        outer.className = `cursor ${shape ? `cursor--${shape}` : ''} ${blend ? 'cursor--blend' : ''} ${morph ? 'cursor--morph' : ''}`
+        inner.className = 'cursor__inner'
+        text.className = 'cursor__text'
+
+        const styles = getDefaultStyles(size, color, shape, blend)
+        const baseFontSize = getBaseFontSize()
+
+        outer.style.cssText = styles.outer + `
+            opacity: ${enabled ? '1' : '0'};
+            display: ${enabled ? 'block' : 'none'};
+        `
+        inner.style.cssText = styles.inner
+        text.style.cssText = styles.text + `
+            font-size: ${textSize * baseFontSize}px;
+            line-height: 1.2;
+            padding: 4px 8px;
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-weight: 500;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            min-width: max-content;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        `
+
+        outer.appendChild(inner)
+        inner.appendChild(text)
+        document.body.appendChild(outer)
+
+        return { outer, inner, text }
+    }
+
+    function setupCursorHiding() {
+        const style = document.createElement('style')
+        // Only hide cursor if morph is false
+        if (!morph) {
+            style.textContent = `* { cursor: none !important; }`
+            document.head.appendChild(style)
+        }
+    }
+
+    function update() {
+        state.currentX += (state.targetX - state.currentX) * smoothness
+        state.currentY += (state.targetY - state.currentY) * smoothness
+        elements.outer.style.transform =
+            `translate3d(${state.currentX - size/2}px, ${state.currentY - size/2}px, 0)`
+        state.animationFrame = requestAnimationFrame(update)
+    }
+
+    function handleHoverStart(element) {
+        if (state.lastHoverElement === element) return
+        state.lastHoverElement = element
+        state.isHovering = true
+
+        // Add hover state class
+        elements.outer.classList.add('cursor--hover')
+
+        // Check for either data-hover-text or data-text-hover attribute
+        const hoverText = element.getAttribute('data-hover-text') || element.getAttribute('data-text-hover')
+        if (hoverText) {
+            elements.outer.classList.add('cursor--has-text')
+            showHoverText(hoverText)
+        } else if (state.currentHoverText) {
+            // Only hide text if we were showing text before
+            elements.outer.classList.remove('cursor--has-text')
+            hideHoverText()
+        } else {
+            // Just do regular hover if we weren't showing text
+            animations.hover()
+        }
+    }
+
+    function handleHoverEnd() {
+        if (!state.isHovering) return
+        state.isHovering = false
+        state.lastHoverElement = null
+
+        // Remove hover state classes
+        elements.outer.classList.remove('cursor--hover')
+        elements.outer.classList.remove('cursor--has-text')
+
+        // Immediately hide text without animation
+        if (state.currentHoverText) {
+            elements.text.textContent = ''
+            elements.text.style.opacity = '0'
+            state.currentHoverText = ''
+        }
+
+        // Contract cursor back to original size
+        animate(elements.inner, {
+            scale: scale
         }, {
-            duration: 0.2,
-            easing
+            duration: ANIMATION_CONFIG.durations.contract,
+            easing: ANIMATION_CONFIG.easing
         })
     }
 
-    const handleMouseDown = () => {
-        if (!currentHoverText) {
-            animate(cursorInner, {
-                scale: isHovering ? hoverScale * clickScale : scale * clickScale,
-                backgroundColor: shape === 'ring' ? 'transparent' : color,
-                borderColor: color
-            }, {
-                duration: 0.1,
-                easing: 'ease-out'
-            })
-        }
+    function showHoverText(text) {
+        if (state.currentHoverText === text) return
+        state.currentHoverText = text
+        animations.expand(text)
     }
 
-    const handleMouseUp = () => {
-        if (!currentHoverText) {
-            animate(cursorInner, {
-                scale: isHovering ? hoverScale : scale,
-                backgroundColor: shape === 'ring' ? 'transparent' : color,
-                borderColor: color
-            }, {
-                duration: 0.1,
-                easing: 'ease-out'
-            })
-        }
+    function hideHoverText() {
+        if (!state.currentHoverText) return
+
+        // Immediately hide text without animation
+        elements.text.textContent = ''
+        elements.text.style.opacity = '0'
+        state.currentHoverText = ''
+
+        // Contract cursor back to original size
+        animate(elements.inner, {
+            scale: scale
+        }, {
+            duration: ANIMATION_CONFIG.durations.contract,
+            easing: ANIMATION_CONFIG.easing
+        })
     }
 
-    const handleMouseOver = (e) => {
-        const target = e.target
-        if (hoverSelectors.some(selector => target.matches(selector))) {
-            handleHoverStart(target)
-        } else {
-            handleHoverEnd()
-        }
+    function show() {
+        if (state.isVisible || !state.isCustomCursorEnabled) return
+        state.isVisible = true
+        elements.outer.style.opacity = '1'
+        elements.outer.classList.add('cursor--visible')
     }
 
-    // Show/hide methods
-    const show = () => {
-        if (isVisible || !isCustomCursorEnabled) return
-        isVisible = true
-        cursorOuter.style.opacity = '1'
-    }
-
-    const hide = () => {
-        if (!isVisible || !isCustomCursorEnabled) return
-        isVisible = false
-        cursorOuter.style.opacity = '0'
+    function hide() {
+        if (!state.isVisible || !state.isCustomCursorEnabled) return
+        state.isVisible = false
+        elements.outer.style.opacity = '0'
+        elements.outer.classList.remove('cursor--visible')
         hideHoverText()
     }
 
-    const showHoverText = (text) => {
-        if (currentHoverText === text) return
-        currentHoverText = text
-
-        // First animate cursor expansion
-        animate(cursorInner, {
-            scale: [scale, 4],
-            backgroundColor: shape === 'ring' ? 'transparent' : color,
-            borderColor: color
-        }, {
-            duration: 0.4,
-            easing
+    function cleanup() {
+        // Remove event listeners
+        Object.entries(handlers).forEach(([event, handler]) => {
+            document.removeEventListener(
+                event.toLowerCase(),
+                handler,
+                event === 'mouseMove' ? { passive: true } : undefined
+            )
         })
 
-        // Then bring in the text
-        hoverText.textContent = text
-        animate(hoverText, {
-            opacity: [0, 1],
-            scale: [0.7, 1],
-            y: [10, 0]
-        }, {
-            duration: 0.3,
-            delay: 0.1,
-            easing
-        })
-    }
-
-    const hideHoverText = () => {
-        if (!currentHoverText) return
-        currentHoverText = ''
-
-        // First animate out the text
-        animate(hoverText, {
-            opacity: [1, 0],
-            scale: [1, 0.7],
-            y: [0, -10]
-        }, {
-            duration: 0.2,
-            easing
-        })
-
-        // Simultaneously shrink the cursor back to regular size
-        animate(cursorInner, {
-            scale: scale,
-            backgroundColor: shape === 'ring' ? 'transparent' : color,
-            borderColor: color
-        }, {
-            duration: 0.3,
-            easing
-        })
-    }
-
-    const cleanup = () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseleave', handleMouseLeave)
-        document.removeEventListener('mouseover', handleMouseOver)
-        document.removeEventListener('mousedown', handleMouseDown)
-        document.removeEventListener('mouseup', handleMouseUp)
-        if (animationFrame) {
-            cancelAnimationFrame(animationFrame)
+        // Cancel animation frame
+        if (state.animationFrame) {
+            cancelAnimationFrame(state.animationFrame)
         }
 
-        // Remove cursor hiding style and restore original cursor
-        if (isCustomCursorEnabled) {
-            // Remove all cursor hiding styles we might have added
+        // Restore cursor
+        if (state.isCustomCursorEnabled) {
             const styles = document.querySelectorAll('style')
             styles.forEach(style => {
                 if (style.textContent.includes('cursor: none')) {
                     style.remove()
                 }
             })
-
-            // Reset cursor styles on all elements
             document.body.style.cursor = 'default'
-            const elements = document.querySelectorAll('*')
-            elements.forEach(el => {
-                if (el.style.cursor === 'none') {
-                    el.style.cursor = ''
-                }
-            })
         }
 
-        // Remove our cursor element
-        cursorOuter.remove()
+        // Remove elements
+        elements.outer.remove()
     }
 
-    // Only set up event listeners if custom cursor is enabled
-    if (isCustomCursorEnabled) {
-        // Start animation loop
+    // Initialize if enabled
+    if (state.isCustomCursorEnabled) {
         update()
-
         // Add event listeners
-        document.addEventListener('mousemove', handleMouseMove, { passive: true })
-        document.addEventListener('mouseleave', handleMouseLeave)
-        document.addEventListener('mouseover', handleMouseOver)
-        document.addEventListener('mousedown', handleMouseDown)
-        document.addEventListener('mouseup', handleMouseUp)
-
-        // Initial position at mouse location (if available)
-        if (typeof MouseEvent !== 'undefined') {
-            const mousePosition = window.mousePosition || { x: 0, y: 0 }
-            targetX = mousePosition.x
-            targetY = mousePosition.y
-        }
+        Object.entries(handlers).forEach(([event, handler]) => {
+            document.addEventListener(
+                event.toLowerCase(),
+                handler,
+                event === 'mouseMove' ? { passive: true } : undefined
+            )
+        })
     }
 
-    return {
-        show,
-        hide,
-        cleanup
-    }
+    return { show, hide, cleanup }
 }
