@@ -36,26 +36,24 @@ export function cursor(options = {}) {
     // Style outer cursor
     cursorOuter.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
-        width: ${size}px;
-        height: ${size}px;
         pointer-events: none;
         z-index: 9999;
         mix-blend-mode: difference;
         transition: opacity 0.15s ease-out;
         will-change: transform;
         opacity: 0;
+        width: ${size}px;
+        height: ${size}px;
+        top: 0;
+        left: 0;
     `
 
     // Style inner cursor
     cursorInner.style.cssText = `
         position: absolute;
-        left: 50%;
-        top: 50%;
         width: 100%;
         height: 100%;
-        transform: translate(-50%, -50%) scale(${scale});
+        transform: scale(${scale});
         will-change: transform;
     `
 
@@ -102,17 +100,17 @@ export function cursor(options = {}) {
         currentX += (targetX - currentX) * smoothness
         currentY += (targetY - currentY) * smoothness
 
-        // Apply position with translate3d for better performance
-        cursorOuter.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`
+        // Apply position
+        cursorOuter.style.transform = `translate3d(${currentX - size/2}px, ${currentY - size/2}px, 0)`
 
         // Continue animation loop
         animationFrame = requestAnimationFrame(update)
     }
 
     const handleMouseMove = (e) => {
-        // Update target position
-        targetX = e.clientX - size / 2
-        targetY = e.clientY - size / 2
+        // Update target position (now centered)
+        targetX = e.clientX
+        targetY = e.clientY
 
         // Show cursor if it was hidden
         if (!isVisible) {
@@ -199,8 +197,8 @@ export function cursor(options = {}) {
     // Initial position at mouse location (if available)
     if (typeof MouseEvent !== 'undefined') {
         const mousePosition = window.mousePosition || { x: 0, y: 0 }
-        targetX = mousePosition.x - size / 2
-        targetY = mousePosition.y - size / 2
+        targetX = mousePosition.x
+        targetY = mousePosition.y
     }
 
     // Return control object
